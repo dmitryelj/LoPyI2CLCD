@@ -2,12 +2,6 @@
 # Ported from Adafruit_Python_SSD1306 library by Dmitrii (dmitryelj@gmail.com)
 # v0.2 beta
 
-#  128x32 I2C OLED Display:
-width  = 128
-height = 32
-pages = 4 #  height/8
-buffer = [0]*512 # 128*32/8
-
 from machine import I2C
 
 # i2C LCD Control constants
@@ -144,8 +138,15 @@ font = [
     0x00, 0x00, 0x77, 0x00, 0x00,
     0x00, 0x41, 0x36, 0x08, 0x00,
     0x02, 0x01, 0x02, 0x04, 0x02,
-    0x3C, 0x26, 0x23, 0x26, 0x3C]    
+    0x3C, 0x26, 0x23, 0x26, 0x3C]  
+  
+# Display data
+width = None
+height = None
+pages = None
+buffer = None  
 
+# I2C
 i2c = I2C(0, I2C.MASTER, baudrate=100000)
 
 def isConnected():
@@ -154,48 +155,82 @@ def isConnected():
         if d == SSD1306_I2C_ADDRESS: return True
     return False
 
-def command(c):
+def command1(c):
     i2c.writeto(SSD1306_I2C_ADDRESS, bytearray([0,  c]))
+    
+def command2(c1,  c2):
+    i2c.writeto(SSD1306_I2C_ADDRESS, bytearray([0,  c1,  c2]))
+    
+def command3(c1,  c2,  c3):
+    i2c.writeto(SSD1306_I2C_ADDRESS, bytearray([0,  c1,  c2,  c3]))
+    
+def initialize(displayType):  
+    global width,  height,  pages,  buffer
+    if displayType == 1:
+       #128x32 I2C OLED Display
+        width  = 128
+        height = 32
+        pages = 4 #  height/8
+        buffer = [0]*512 # 128*32/8
+        initialize_128x32()
+    if displayType == 2:
+       #128x64 I2C OLED Display
+        width  = 128
+        height = 64
+        pages = 8 #  height/8
+        buffer = [0]*1024 # 128*64/8
+        initialize_128x64()
 
-def initialize():
-    # 128x32 pixel specific initialization.
-    command(SSD1306_DISPLAYOFF)                    # 0xAE
-    command(SSD1306_SETDISPLAYCLOCKDIV)            # 0xD5
-    command(0x80)                                  # the suggested ratio 0x80
-    command(SSD1306_SETMULTIPLEX)                  # 0xA8
-    command(0x1F)
-    command(SSD1306_SETDISPLAYOFFSET)              # 0xD3
-    command(0x0)                                   # no offset
-    command(SSD1306_SETSTARTLINE | 0x0)            # line #0
-    command(SSD1306_CHARGEPUMP)                    # 0x8D
-    command(0x14) #  SSD1306_EXTERNALVCC 0 - 0x10
-    command(SSD1306_MEMORYMODE)                    # 0x20
-    command(0x00)                                  # 0x0 act like ks0108
-    command(SSD1306_SEGREMAP | 0x1)
-    command(SSD1306_COMSCANDEC)
-    command(SSD1306_SETCOMPINS)                    # 0xDA
-    command(0x02)
-    command(SSD1306_SETCONTRAST)                   # 0x81
-    command(0x8F)
-    command(SSD1306_SETPRECHARGE)                  # 0xd9
-    command(0xF1) # SSD1306_EXTERNALVCC - 0x22
-    command(SSD1306_SETVCOMDETECT)                 # 0xDB
-    command(0x40)
-    command(SSD1306_DISPLAYALLON_RESUME)           # 0xA4
-    command(SSD1306_NORMALDISPLAY)                 # 0xA6
+def initialize_128x32():
+    command1(SSD1306_DISPLAYOFF)                    # 0xAE
+    command2(SSD1306_SETDISPLAYCLOCKDIV,  0x80)            # 0xD5
+    command2(SSD1306_SETMULTIPLEX,  0x1F)                  # 0xA8
+    command2(SSD1306_SETDISPLAYOFFSET,  0x0)              # 0xD3
+    command1(SSD1306_SETSTARTLINE | 0x0)            # line #0
+    command2(SSD1306_CHARGEPUMP,  0x14)                    # 0x8D
+    command2(SSD1306_MEMORYMODE,  0x00)                    # 0x20
+    command3(SSD1306_COLUMNADDR,  0,  width-1)
+    command3(SSD1306_PAGEADDR,  0,  pages-1)
+    command1(SSD1306_SEGREMAP | 0x1)
+    command1(SSD1306_COMSCANDEC)
+    command2(SSD1306_SETCOMPINS,  0x02)                    # 0xDA
+    command2(SSD1306_SETCONTRAST,  0x8F)                   # 0x81
+    command2(SSD1306_SETPRECHARGE,  0xF1)                  # 0xd9
+    command2(SSD1306_SETVCOMDETECT,  0x40)                 # 0xDB
+    command1(SSD1306_DISPLAYALLON_RESUME)           # 0xA4
+    command1(SSD1306_NORMALDISPLAY)                 # 0xA6
+    
+def initialize_128x64():
+    command1(SSD1306_DISPLAYOFF)                    # 0xAE
+    command1(SSD1306_DISPLAYALLON_RESUME)           # 0xA4
+    command2(SSD1306_SETDISPLAYCLOCKDIV, 0x80)            # 0xD5
+    command2(SSD1306_SETMULTIPLEX,  0x3F)                  # 0xA8
+    command2(SSD1306_SETDISPLAYOFFSET,  0x0)              # 0xD3
+    command1(SSD1306_SETSTARTLINE | 0x0)            # line #0
+    command2(SSD1306_CHARGEPUMP,  0x14)                    # 0x8D
+    command2(SSD1306_MEMORYMODE,  0x00)                    # 0x20
+    command3(SSD1306_COLUMNADDR,  0,  width-1)
+    command3(SSD1306_PAGEADDR,  0,  pages-1)
+    command1(SSD1306_SEGREMAP | 0x1)
+    command1(SSD1306_COMSCANDEC)
+    command2(SSD1306_SETCOMPINS,  0x12)                    # 0xDA
+    command2(SSD1306_SETCONTRAST,  0xCF)                   # 0x81
+    command2(SSD1306_SETPRECHARGE,  0xF1)                  # 0xd9
+    command2(SSD1306_SETVCOMDETECT,  0x40)                 # 0xDB
+    command1(SSD1306_NORMALDISPLAY)                 # 0xA6
+    command1(SSD1306_DISPLAYON)
         
 def set_contrast(contrast):
     # Sets the contrast of the display.  Contrast should be a value between 0 and 255.
     if contrast < 0 or contrast > 255:
         print('Contrast must be a value from 0 to 255 (inclusive).')
-    command(SSD1306_SETCONTRAST)
-    command(contrast)
+    command2(SSD1306_SETCONTRAST,  contrast)
         
 def displayOff():
-    command(SSD1306_DISPLAYOFF)
+    command1(SSD1306_DISPLAYOFF)
         
 def displayOn():
-    command(SSD1306_DISPLAYON)
+    command1(SSD1306_DISPLAYON)
         
 def clearBuffer():
      for i in range(0, len(buffer)): 
@@ -213,17 +248,17 @@ def addString(x,  y,  str):
         symPos += 6
              
 def drawBuffer():
-        #Write display buffer to physical display.
-        command(SSD1306_COLUMNADDR)
-        command(0)              # Column start address. (0 = reset)
-        command(width-1)     # Column end address.
-        command(SSD1306_PAGEADDR)
-        command(0)              # Page start address. (0 = reset)
-        command(pages-1)    # Page end address.
-        # Write buffer data.
-        for i in range(0, len(buffer), 16):
-            i2c.writeto_mem(SSD1306_I2C_ADDRESS, 0x40, bytearray(buffer[i:i+16]))
-            
+    #Write display buffer to physical display.
+    command1(SSD1306_SETLOWCOLUMN)
+    command1(SSD1306_SETHIGHCOLUMN)
+    command1(SSD1306_SETSTARTLINE)
+    # Write buffer data.
+    line = [0]*17
+    line[0] = 0x40
+    for i in range(0, len(buffer), 16):
+        for p in range(0, 16): 
+            line[p+1] = buffer[i + p]
+        i2c.writeto(SSD1306_I2C_ADDRESS, bytearray(line))  
             
 if __name__ == "__main__":
     import sys,  machine
@@ -231,7 +266,8 @@ if __name__ == "__main__":
     print("Started")
 
     if isConnected():
-        initialize()
+        displayType = 1 # 1 - 128x32 I2C OLED Display, 2 - 128x64 I2C OLED Display
+        initialize(displayType)
         set_contrast(128) # 1-255
         displayOn()
         clearBuffer()
