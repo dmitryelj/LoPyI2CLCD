@@ -1,10 +1,31 @@
 # I2C LCD library for LoPy board
 # Ported from Adafruit_Python_SSD1306 library by Dmitrii (dmitryelj@gmail.com)
-# v0.2 beta
+# v0.3 beta
+
+# Display types
+kDisplayI2C128x32 = 1
+kDisplayI2C128x64 = 2 # not tested
+kDisplaySPI128x32 = 3 # not tested
+kDisplaySPI128x64 = 4
 
 from machine import I2C
+from machine import SPI
+from machine import Pin
+import time
 
-# i2C LCD Control constants
+# I2C OLED Wiring: standard
+i2c = None
+
+# SPI OLED Wiring: 
+# D0 - P10 (CLK)
+# D1 - P11 (MOSI)
+# DC - P23
+# RST - P22
+spi = None
+DC_PIN   = Pin('P23', mode=Pin.OUT)
+RST_PIN = Pin('P22', mode=Pin.OUT)
+
+# LCD Control constants
 SSD1306_I2C_ADDRESS = 0x3C  
 SSD1306_SETCONTRAST = 0x81
 SSD1306_DISPLAYALLON_RESUME = 0xA4
@@ -146,39 +167,81 @@ height = None
 pages = None
 buffer = None  
 
-# I2C
-i2c = I2C(0, I2C.MASTER, baudrate=100000)
-
 def isConnected():
-    devices = i2c.scan() # returns list of slave addresses
-    for d in devices:
-        if d == SSD1306_I2C_ADDRESS: return True
-    return False
+    if i2c != None:
+        # Check I2C devices
+        devices = i2c.scan() # returns list of slave addresses
+        for d in devices:
+            if d == SSD1306_I2C_ADDRESS: return True
+        return False
+    else:
+        # No check for SPI
+        return True
 
 def command1(c):
-    i2c.writeto(SSD1306_I2C_ADDRESS, bytearray([0,  c]))
-    
+    if i2c != None:
+        i2c.writeto(SSD1306_I2C_ADDRESS, bytearray([0,  c]))
+    else:
+        DC_PIN.value(0)
+        spi.write(bytes([c]))
+        
 def command2(c1,  c2):
-    i2c.writeto(SSD1306_I2C_ADDRESS, bytearray([0,  c1,  c2]))
+    if i2c != None:
+        i2c.writeto(SSD1306_I2C_ADDRESS, bytearray([0,  c1,  c2]))
+    else:
+        DC_PIN.value(0)
+        spi.write(bytes([c1,  c2]))
     
 def command3(c1,  c2,  c3):
-    i2c.writeto(SSD1306_I2C_ADDRESS, bytearray([0,  c1,  c2,  c3]))
-    
-def initialize(displayType):  
-    global width,  height,  pages,  buffer
-    if displayType == 1:
+    if i2c != None:
+        i2c.writeto(SSD1306_I2C_ADDRESS, bytearray([0,  c1,  c2,  c3]))
+    else:
+        DC_PIN.value(0)
+        spi.write(bytes([c1,  c2,  c3]))
+        
+def writeSPIData(data):   
+    DC_PIN.value(1) 
+    spi.write(bytes(data))        
+
+def initialize(type):  
+    global width,  height,  pages,  buffer,  i2c,  spi
+    if type == kDisplayI2C128x32:
        #128x32 I2C OLED Display
         width  = 128
         height = 32
         pages = 4 #  height/8
         buffer = [0]*512 # 128*32/8
+        i2c = I2C(0, I2C.MASTER, baudrate=100000)
         initialize_128x32()
-    if displayType == 2:
+    if type == kDisplayI2C128x64:
        #128x64 I2C OLED Display
         width  = 128
         height = 64
         pages = 8 #  height/8
         buffer = [0]*1024 # 128*64/8
+        i2c = I2C(0, I2C.MASTER, baudrate=100000)
+        initialize_128x64()
+    if type == kDisplaySPI128x32:
+       #128x32 SPI OLED Display
+        width  = 128
+        height = 32
+        pages = 4 #  height/8
+        buffer = [0]*512 # 128*32/8
+        spi = SPI(0, mode=SPI.MASTER, baudrate=1000000, polarity=0, phase=0, firstbit=SPI.MSB)
+        RST_PIN.value(0) 
+        time.sleep(0.01)
+        RST_PIN.value(1)
+        initialize_128x32()
+    if type == kDisplaySPI128x64:
+       #128x64 SPI OLED Display
+        width  = 128
+        height = 64
+        pages = 8 #  height/8
+        buffer = [0]*1024 # 128*64/8
+        spi = SPI(0, mode=SPI.MASTER, baudrate=1000000, polarity=0, phase=0, firstbit=SPI.MSB)
+        RST_PIN.value(0) 
+        time.sleep(0.01)
+        RST_PIN.value(1) 
         initialize_128x64()
 
 def initialize_128x32():
@@ -248,26 +311,28 @@ def addString(x,  y,  str):
         symPos += 6
              
 def drawBuffer():
-    #Write display buffer to physical display.
     command1(SSD1306_SETLOWCOLUMN)
     command1(SSD1306_SETHIGHCOLUMN)
     command1(SSD1306_SETSTARTLINE)
-    # Write buffer data.
-    line = [0]*17
-    line[0] = 0x40
-    for i in range(0, len(buffer), 16):
-        for p in range(0, 16): 
-            line[p+1] = buffer[i + p]
-        i2c.writeto(SSD1306_I2C_ADDRESS, bytearray(line))  
-            
+    #Write display buffer to physical display.
+    if spi != None:
+        writeSPIData(buffer)
+    else:        
+        line = [0]*17
+        line[0] = 0x40
+        for i in range(0, len(buffer), 16):
+            for p in range(0, 16): 
+                line[p+1] = buffer[i + p]            
+            i2c.writeto(SSD1306_I2C_ADDRESS, bytearray(line))  
+                
 if __name__ == "__main__":
     import sys,  machine
 
     print("Started")
 
+    displayType = kDisplaySPI128x64
+    initialize(displayType)
     if isConnected():
-        displayType = 1 # 1 - 128x32 I2C OLED Display, 2 - 128x64 I2C OLED Display
-        initialize(displayType)
         set_contrast(128) # 1-255
         displayOn()
         clearBuffer()
@@ -276,6 +341,6 @@ if __name__ == "__main__":
         addString(0, 2,  "CPU: {} MHz".format(machine.freq()[0]/1000000))
         drawBuffer()
     else:    
-        print("Error: I2C LCD not found")
+        print("Error: LCD not found")
 
     print("Done")
