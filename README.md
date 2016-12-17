@@ -18,6 +18,7 @@ D0 - P10 (CLK)
 D1 - P11 (MOSI)
 DC - P23
 RST - P22
+CS - not used (for some displays needs to be connected with GND)
 
 # Example:
 ```python

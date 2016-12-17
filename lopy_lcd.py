@@ -21,6 +21,7 @@ i2c = None
 # D1 - P11 (MOSI)
 # DC - P23
 # RST - P22
+# CS - not used (for some displays needs to be connected with GND)
 spi = None
 DC_PIN   = Pin('P23', mode=Pin.OUT)
 RST_PIN = Pin('P22', mode=Pin.OUT)
