@@ -1,2 +1,2 @@
 # LoPyI2CLCD
-LoPy I2C LCD Library
+LoPy I2C/SPI LCD Library
