@@ -326,7 +326,7 @@ def drawBuffer():
             i2c.writeto(SSD1306_I2C_ADDRESS, bytearray(line))  
                 
 if __name__ == "__main__":
-    import sys,  machine
+    import sys,  machine,  os
 
     print("Started")
 
@@ -339,6 +339,7 @@ if __name__ == "__main__":
         addString(0, 0,  sys.platform + " " + sys.version)
         addString(0, 1,  "---")
         addString(0, 2,  "CPU: {} MHz".format(machine.freq()[0]/1000000))
+        addString(0, 4,  "Version: {}".format(os.uname().release))
         drawBuffer()
     else:    
         print("Error: LCD not found")
