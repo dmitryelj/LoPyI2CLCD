@@ -5,13 +5,15 @@ LoPy I2C/SPI LCD Library
 
 ![LCD-1](screenshots/LoPy-lcd1.jpg)
 
+![LCD-1](screenshots/LoPy-lcd3.jpg)
+
 **SPI Display:**
 
 ![LCD-2](screenshots/LoPy-lcd2.jpg)
 
 # Display wiring
 **i2c:** 
-standard, see LoPy i2c pins
+GND, 3.3V, SDA, SCL (see LoPy pinout)
 
 **spi:** 
 D0 - P10 (CLK)

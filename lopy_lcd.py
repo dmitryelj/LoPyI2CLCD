@@ -1,10 +1,10 @@
 # I2C LCD library for LoPy board
 # Ported from Adafruit_Python_SSD1306 library by Dmitrii (dmitryelj@gmail.com)
-# v0.3 beta
+# v0.4 beta
 
 # Display types
 kDisplayI2C128x32 = 1
-kDisplayI2C128x64 = 2 # not tested
+kDisplayI2C128x64 = 2 
 kDisplaySPI128x32 = 3 # not tested
 kDisplaySPI128x64 = 4
 
@@ -331,7 +331,7 @@ if __name__ == "__main__":
 
     print("Started")
 
-    displayType = kDisplaySPI128x64
+    displayType = kDisplayI2C128x64
     initialize(displayType)
     if isConnected():
         set_contrast(128) # 1-255
@@ -341,6 +341,9 @@ if __name__ == "__main__":
         addString(0, 1,  "---")
         addString(0, 2,  "CPU: {} MHz".format(machine.freq()[0]/1000000))
         addString(0, 4,  "Version: {}".format(os.uname().release))
+        addString(0, 5,  "LoPy font test")
+        addString(0, 6,  "AaBbCcDdEeFfGgHhIi")
+        addString(0, 7,  "0123456789012345")
         drawBuffer()
     else:    
         print("Error: LCD not found")
