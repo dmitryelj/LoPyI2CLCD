@@ -32,6 +32,6 @@ if isConnected():
    clearBuffer()
    addString(0, 0,  sys.platform + " " + sys.version)
    addString(0, 1,  "---")
-   addString(0, 2,  "CPU: {} MHz".format(machine.freq()[0]/1000000))
+   addString(0, 2,  "CPU: {} MHz".format(machine.freq()/1000000))
    drawBuffer()
 ```
