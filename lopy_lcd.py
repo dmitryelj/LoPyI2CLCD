@@ -339,7 +339,7 @@ if __name__ == "__main__":
         clearBuffer()
         addString(0, 0,  sys.platform + " " + sys.version)
         addString(0, 1,  "---")
-        addString(0, 2,  "CPU: {} MHz".format(machine.freq()[0]/1000000))
+        addString(0, 2,  "CPU: {} MHz".format(machine.freq()/1000000))
         addString(0, 4,  "Version: {}".format(os.uname().release))
         addString(0, 5,  "LoPy font test")
         addString(0, 6,  "AaBbCcDdEeFfGgHhIi")
